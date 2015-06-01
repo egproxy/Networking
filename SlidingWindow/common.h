@@ -85,14 +85,14 @@ typedef struct Receiver_t Receiver;
 
 
 #define MAX_FRAME_SIZE 64
-#define FRAME_PAYLOAD_SIZE 56 
+#define FRAME_PAYLOAD_SIZE 48 
 typedef unsigned char uchar;
 struct Frame_t {
-  unsigned char srcid;            // 4 bytes  - header
-  unsigned char dstid;
-  unsigned char seqid;
-  unsigned char hgutt;            // gutter always 0
-  char data[FRAME_PAYLOAD_SIZE];  // 56 bytes - body
+  unsigned char src;            // 4 bytes  - header
+  unsigned char dst;
+  unsigned char seq;
+  unsigned char gut;            // gutter always 0
+  char data[FRAME_PAYLOAD_SIZE];  // 48 bytes - body
   uint32_t crc;                   // 4 bytes  - CRC
 };
 typedef struct Frame_t Frame;

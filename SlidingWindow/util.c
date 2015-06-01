@@ -63,24 +63,38 @@ void print_cmd(Cmd * cmd) {
     cmd->src_id, cmd->dst_id, cmd->message);
 }
 
+void print_frame(Frame *f) {
+  fprintf(
+    stderr,
+    "\n===== FRAME =====\nsrc=%02x\ndst=%02x\nseq=%02x\nbuff=%s\ncrc=%04x\n====== END ======\n\n",
+    f->src, f->dst, f->seq,
+    f->data, f->crc
+  );
+}
 
 char * convert_frame_to_char(Frame * frame) {
   char * char_buffer = (char *) malloc(MAX_FRAME_SIZE);
   char * offset = char_buffer;
   memset(char_buffer, 0, MAX_FRAME_SIZE);
-  memcpy(offset, frame, 4); // 4 byte header
-  offset+=4;
+  memcpy(offset, frame, 4);
+  offset += 4;
   memcpy(offset, frame->data, FRAME_PAYLOAD_SIZE);
-  offset+=FRAME_PAYLOAD_SIZE;
+  offset += FRAME_PAYLOAD_SIZE;
   memcpy(offset, &frame->crc, 4);
   return char_buffer;
 }
 
-
-Frame * convert_char_to_frame(char * char_buf) {
-  //TODO: You should implement this as necessary
-  Frame * frame = (Frame *) malloc(sizeof(Frame));
-  memset(frame->data, 0, sizeof(char)*sizeof(frame->data));
-  memcpy(frame->data, char_buf, sizeof(char)*sizeof(frame->data));
+Frame * convert_char_to_frame(char * buffer) {
+  char *offset = buffer;
+  Frame * frame = (Frame *) malloc(MAX_FRAME_SIZE);
+  memcpy( frame, offset, 1);      // src
+  memcpy( frame+1, offset+1, 1);  // dst
+  memcpy( frame+2, offset+2, 1);  // seq
+  frame->gut = '\0';
+  offset += 4;
+  memset(frame->data, 0, FRAME_PAYLOAD_SIZE);
+  memcpy(frame->data, offset, FRAME_PAYLOAD_SIZE);
+  offset += FRAME_PAYLOAD_SIZE;
+  memcpy( &frame->crc, offset, 4);
   return frame;
 }

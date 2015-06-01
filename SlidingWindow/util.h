@@ -18,7 +18,10 @@ int ll_get_length(LLnode *);
 void ll_append_node(LLnode **, void *);
 LLnode * ll_pop_node(LLnode **);
 void ll_destroy_node(LLnode *);
+
 void print_cmd(Cmd *);
+void print_frame(Frame *);
+
 long timeval_usecdiff(struct timeval *, struct timeval *);
 
 char * convert_frame_to_char(Frame *);

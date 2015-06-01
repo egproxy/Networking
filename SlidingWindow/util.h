@@ -14,20 +14,14 @@
 #include <sys/time.h>
 #include "common.h"
 
-//Linked list functions
 int ll_get_length(LLnode *);
 void ll_append_node(LLnode **, void *);
 LLnode * ll_pop_node(LLnode **);
 void ll_destroy_node(LLnode *);
-
-//Print functions
 void print_cmd(Cmd *);
+long timeval_usecdiff(struct timeval *, struct timeval *);
 
-//Time functions
-long timeval_usecdiff(struct timeval *, 
-                      struct timeval *);
-
-//TODO: Impelemt these functions
 char * convert_frame_to_char(Frame *);
 Frame * convert_char_to_frame(char *);
+
 #endif

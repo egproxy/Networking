@@ -1,4 +1,4 @@
-TARGET=tritontalk
+TARGET=swptalk
 
 CC = gcc
 DEBUG = -g #-v
@@ -12,7 +12,7 @@ CCFLAGS = -Wall $(DEBUG) -D$(OS)
 # add object file names here
 OBJS = main.o util.o input.o communicate.o sender.o receiver.o
 
-all: tritontalk
+all: swptalk
 
 %.o : %.c
 	$(CC) -c $(CCFLAGS) $<
@@ -25,6 +25,3 @@ $(TARGET): $(OBJS)
 
 clean:
 	rm -f $(TARGET) core *.o *~ 
-
-submit: clean
-	rm -f project1.tgz; tar czvf project1.tgz *; turnin project1.tgz -c cs123f -p project1

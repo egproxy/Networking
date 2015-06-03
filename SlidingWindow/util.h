@@ -27,4 +27,6 @@ long timeval_usecdiff(struct timeval *, struct timeval *);
 char * convert_frame_to_char(Frame *);
 Frame * convert_char_to_frame(char *);
 
+uint32_t crc32(char *);
+
 #endif

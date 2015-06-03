@@ -98,3 +98,7 @@ Frame * convert_char_to_frame(char * buffer) {
   memcpy( &frame->crc, offset, 4);
   return frame;
 }
+
+uint32_t crc32(char *buff) {
+  uint32_t cx = 
+}

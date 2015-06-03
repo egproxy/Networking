@@ -28,7 +28,7 @@ typedef struct SysConfig_t  SysConfig;
 struct Cmd_t {
   uint16_t src_id;
   uint16_t dst_id;
-  char * message;
+  char *message;
 };
 typedef struct Cmd_t Cmd;
 
@@ -50,11 +50,6 @@ typedef struct LLnode_t LLnode;
 
 //Receiver and sender data structures
 struct Receiver_t {
-  //DO NOT CHANGE:
-  // 1) buffer_mutex
-  // 2) buffer_cv
-  // 3) input_framelist_head
-  // 4) recv_id
   pthread_mutex_t buffer_mutex;
   pthread_cond_t buffer_cv;
   LLnode * input_framelist_head;
@@ -62,12 +57,6 @@ struct Receiver_t {
 };
 
 struct Sender_t {
-  //DO NOT CHANGE:
-  // 1) buffer_mutex
-  // 2) buffer_cv
-  // 3) input_cmdlist_head
-  // 4) input_framelist_head
-  // 5) send_id
   pthread_mutex_t buffer_mutex;
   pthread_cond_t buffer_cv;    
   LLnode * input_cmdlist_head;
@@ -78,7 +67,7 @@ struct Sender_t {
 enum SendFrame_DstType {
   ReceiverDst,
   SenderDst
-} SendFrame_DstType ;
+} SendFrame_DstType;
 
 typedef struct Sender_t Sender;
 typedef struct Receiver_t Receiver;
@@ -88,24 +77,17 @@ typedef struct Receiver_t Receiver;
 #define FRAME_PAYLOAD_SIZE 48 
 typedef unsigned char uchar;
 struct Frame_t {
-  unsigned char src;            // 4 bytes  - header
+  unsigned char src;              // 4 bytes  - header
   unsigned char dst;
   unsigned char seq;
-  unsigned char gut;            // gutter always 0
+  unsigned char gut;              // gutter always 0
   char data[FRAME_PAYLOAD_SIZE];  // 48 bytes - body
   uint32_t crc;                   // 4 bytes  - CRC
 };
 typedef struct Frame_t Frame;
 
 
-//Declare global variables here
-//DO NOT CHANGE: 
-//   1) glb_senders_array
-//   2) glb_receivers_array
-//   3) glb_senders_array_length
-//   4) glb_receivers_array_length
-//   5) glb_sysconfig
-//   6) CORRUPTION_BITS
+//Declare global variables here DO NOT CHANGE 
 Sender * glb_senders_array;
 Receiver * glb_receivers_array;
 int glb_senders_array_length;

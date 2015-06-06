@@ -14,16 +14,20 @@ void init_receiver(Receiver * receiver, int id) {
 //    5) Do sliding window protocol for sender/receiver pair
 
 
-void handle_incoming_msgs(Receiver *rcvr, LLnode **outgoing_frames_head_ptr) {
-  while( ll_get_length(rcvr->input_framelist_head) > 0 ) {
-    LLnode *msgNode = ll_pop_node(&rcvr->input_framelist_head);
-
+void handle_incoming_msgs(Receiver *r, LLnode **outgoing_frames_head_ptr) {
+  while( ll_get_length(r->input_framelist_head) > 0 ) {
+    LLnode *msgNode = ll_pop_node(&r->input_framelist_head);
     char *raw_char_buf = (char *)msgNode->value;
     Frame *inframe = convert_char_to_frame(raw_char_buf);
-    
     free(raw_char_buf);
-    
-    printf("<RECV_%d>:[%s]\n", rcvr->recv_id, inframe->data);
+
+    // If corrupted, drop this frame 
+    if( !(crc32(inframe, 4+FRAME_PAYLOAD_SIZE) ^ inframe->crc) ) {
+      // if not the right recipient, drop this frame
+      if( r->recv_id == inframe->dst ) {
+        printf("<RECV_%d>:[%s]\n", r->recv_id, inframe->data);
+      }
+    }
 
     free(inframe);
     free(msgNode);

@@ -33,11 +33,12 @@ void handle_input( Sender *s, LLnode **frameHead ) {
     Frame *sendFrame = (Frame *)malloc(sizeof(Frame));
     sendFrame->src = input->src_id;
     sendFrame->dst = input->dst_id;
-    sendFrame->seq = 45; //2d for todo
+    sendFrame->seq = 0x2D;
     sendFrame->gut = '\0';
     strcpy(sendFrame->data, input->message);
-
+    sendFrame->crc = crc32(sendFrame, 4+FRAME_PAYLOAD_SIZE);
     char *serialized = convert_frame_to_char(sendFrame);
+
     ll_append_node(frameHead, serialized);
     free(input->message);
     free(input);

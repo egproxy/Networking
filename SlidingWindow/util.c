@@ -99,6 +99,10 @@ Frame * convert_char_to_frame(char * buffer) {
   return frame;
 }
 
-uint32_t crc32(char *buff) {
-  uint32_t cx = 
+uint32_t crc32(const void *buff, int len) {
+  const uint8_t *p = (unsigned char*) buff;
+  uint32_t crc = 0;
+  while (len--)
+    crc = (crc >> 8) ^ precomp32[(crc ^ *p++) & 0xFF];
+  return crc;
 }

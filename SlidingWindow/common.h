@@ -67,6 +67,9 @@ struct Sender_t {
   LLnode * input_cmdlist_head;
   LLnode * input_framelist_head;
   int send_id;
+  unsigned char LFS;  // last frame sent
+  unsigned char LAR;  // last ack received
+  unsigned char SWS;
 };
 
 enum SendFrame_DstType {

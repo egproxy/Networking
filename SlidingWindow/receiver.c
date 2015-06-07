@@ -14,23 +14,27 @@ void init_receiver(Receiver * receiver, int id) {
 //    5) Do sliding window protocol for sender/receiver pair
 
 
-void handle_incoming_msgs(Receiver *r, LLnode **outgoing_frames_head_ptr) {
+void handle_incoming_msgs(Receiver *r, LLnode **output_framelist_head) {
   while( ll_get_length(r->input_framelist_head) > 0 ) {
     LLnode *msgNode = ll_pop_node(&r->input_framelist_head);
-    char *raw_char_buf = (char *)msgNode->value;
-    Frame *inframe = convert_char_to_frame(raw_char_buf);
-    free(raw_char_buf);
+    char *raw_buf = (char *)msgNode->value;
+    Frame *inframe = convert_char_to_frame(raw_buf);
 
     // If corrupted, drop this frame 
     if( !(crc32(inframe, 4+FRAME_PAYLOAD_SIZE) ^ inframe->crc) ) {
       // if not the right recipient, drop this frame
       if( r->recv_id == inframe->dst ) {
         printf("<RECV_%d>:[%s]\n", r->recv_id, inframe->data);
+        char *ack_buf = (char *)malloc(MAX_FRAME_SIZE);
+        memcpy(ack_buf, raw_buf, MAX_FRAME_SIZE);
+        ack_buf[3] = ACK_FLAG;
+        ll_append_node(output_framelist_head, ack_buf);
       }
     }
 
-    free(inframe);
     free(msgNode);
+    free(raw_buf);
+    free(inframe);
   }
 }
 
@@ -91,7 +95,7 @@ void * run_receiver(void * input_receiver) {
         while(ll_outgoing_frame_length > 0) {
             LLnode * ll_outframe_node = ll_pop_node(&outgoing_frames_head);
             char * char_buf = (char *) ll_outframe_node->value;
-            
+
             //The following function frees the memory for the char_buf object
             send_msg_to_senders(char_buf);
 

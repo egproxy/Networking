@@ -11,7 +11,16 @@ struct timeval *sender_get_next_expiring_timeval(Sender * sender) {
 }
 
 
-void handle_incoming_acks(Sender * sender, LLnode ** outgoing_frames_head_ptr) {
+void handle_incoming_acks(Sender * s, LLnode ** frameHead) {
+  LLnode *temp = NULL;
+  char *inbound = NULL;
+  while(ll_get_length(s->input_framelist_head) > 0 ) {
+    temp = ll_pop_node(&s->input_framelist_head);
+    inbound = (char *)temp->value;
+    fprintf(stderr, "NOTICE <SND_%d> : Got an ACK from <RECV_%d>\n",s->send_id, inbound[1]);
+    free(inbound);
+  }
+ 
 }
 
 
@@ -34,7 +43,7 @@ void handle_input( Sender *s, LLnode **frameHead ) {
     sendFrame->src = input->src_id;
     sendFrame->dst = input->dst_id;
     sendFrame->seq = 0x2D;
-    sendFrame->gut = '\0';
+    sendFrame->flag = SEQ_FLAG;
     strcpy(sendFrame->data, input->message);
     sendFrame->crc = crc32(sendFrame, 4+FRAME_PAYLOAD_SIZE);
     char *serialized = convert_frame_to_char(sendFrame);

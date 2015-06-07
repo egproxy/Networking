@@ -78,7 +78,6 @@ char * convert_frame_to_char(Frame * frame) {
   memset(buffer, 0, MAX_FRAME_SIZE);
   memcpy(offset, frame, 4);
   offset += 4;
-
   memcpy(offset, frame->data, FRAME_PAYLOAD_SIZE);
   offset += FRAME_PAYLOAD_SIZE;
   memcpy(offset, &frame->crc, 4);
@@ -91,7 +90,7 @@ Frame * convert_char_to_frame(char * buffer) {
   frame->src = buffer[0];
   frame->dst = buffer[1];
   frame->seq = buffer[2];
-  frame->gut = '\0';
+  frame->flag = buffer[3];
   memset(frame->data, 0, FRAME_PAYLOAD_SIZE);
   memcpy(frame->data, buffer + 4, FRAME_PAYLOAD_SIZE);
   memcpy( &frame->crc, buffer + 4 + FRAME_PAYLOAD_SIZE, 4);

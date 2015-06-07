@@ -15,6 +15,11 @@
 
 #define MAX_COMMAND_LENGTH 16
 #define AUTOMATED_FILENAME 512
+#define MAX_SEQ 256
+#define MAX_ACK 256
+#define ACK_FLAG 1
+#define SEQ_FLAG 0
+
 typedef unsigned char uchar_t;
 
 struct SysConfig_t {
@@ -80,7 +85,7 @@ struct Frame_t {
   unsigned char src;              // 4 bytes  - header
   unsigned char dst;
   unsigned char seq;
-  unsigned char gut;              // gutter always 0
+  unsigned char flag;             // flag 0 for seq 1 for ack
   char data[FRAME_PAYLOAD_SIZE];  // 48 bytes - body
   uint32_t crc;                   // 4 bytes  - CRC
 };

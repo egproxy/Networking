@@ -44,7 +44,7 @@ LLnode * ll_pop_node(LLnode ** headPtr) {
 
 void ll_destroy_node(LLnode * node) {
   if (node->type == llt_string)
-    free((unsigned char *) node->value);
+    free(node->value);
   free(node);
 }
 

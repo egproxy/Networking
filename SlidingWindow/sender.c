@@ -1,20 +1,26 @@
 #include "sender.h"
 
-void init_sender(Sender* sender, int id) {
-  sender->send_id = id;
-  sender->input_cmdlist_head = NULL;
-  sender->input_framelist_head = NULL;
-  sender->LFS = MAX_SEQ-1;
-  sender->LAR = MAX_SEQ-1;
-  sender->SWS = 1;
+void init_sender(Sender* s, int id) {
+  s->send_id = id;
+  s->input_cmdlist_head = NULL;
+  s->input_framelist_head = NULL;
+  s->LFS = MAX_SEQ-1;
+  s->LAR = MAX_SEQ-1;
+  s->SWS = 0;
+  s->buffer = NULL;
 }
 
-struct timeval *sender_get_next_expiring_timeval(Sender* sender) {
+/***
+ *  Sender keeps track of when frames were sent out in the current sliding window
+    Sender will always wait 1 decisecond unless this function returns a timeval to 
+    wake prematurely due to a frame that will timeout within that interval
+ */
+struct timeval *next_expiring_timeval(Sender* s) {
   return NULL;
 }
 
 
-void handle_acks(Sender* s, LLnode** frameHead) {
+void handle_acks(Sender* s, LLnode** outgoing) {
   LLnode *temp = NULL;
   char *inbound = NULL;
   while(ll_get_length(s->input_framelist_head) > 0 ) {
@@ -22,7 +28,8 @@ void handle_acks(Sender* s, LLnode** frameHead) {
     inbound = (char *)temp->value;
    
     if( inbound[0] == s->send_id && (s->LAR+MAX_SEQ+1) % MAX_SEQ == inbound[2] ) {
-      s->LAR = inbound[2]; 
+      s->LAR++; 
+      s->SWS--;
       fprintf(stderr, "NOTICE <SND_%d> : Got an ACK from <RECV_%d>\n",s->send_id, inbound[1]);
     }
     free(inbound);
@@ -31,18 +38,18 @@ void handle_acks(Sender* s, LLnode** frameHead) {
 }
 
 #define SND_DEBUG 0
-void handle_input( Sender* s, LLnode** frameHead ) {
+void handle_input( Sender* s, LLnode** outgoing) {
   LLnode *temp = NULL;
   Cmd *input = NULL;
 
   while( ll_get_length(s->input_cmdlist_head) > 0 ) {
-    // CHECK:  within SWS limits
-    if( (s->LAR > s->LFS ? s->LFS + MAX_SEQ : s->LFS) - s->LAR < s->SWS ) {
-      if(SND_DEBUG) printf("Sender is within SWS limits\n");
+    if( s->SWS < MAX_SWS) {
+      if(SND_DEBUG) printf( "Sender is within SWS limits\n");
       s->LFS = (s->LFS + 1 + MAX_SEQ) % MAX_SEQ;
+      s->SWS = (s->LAR > s->LFS ? s->LFS + MAX_SEQ : s->LFS) - s->LAR;
     } else {
-      if(SND_DEBUG) printf("WARNING :: SWS exceeded\n");
-      break; //break out to handle_ack()
+      if(SND_DEBUG) printf( "WARNING :: SWS exceeded\n");
+      break; 
     }
     temp = ll_pop_node(&s->input_cmdlist_head);
     input = (Cmd *)temp->value;
@@ -63,8 +70,7 @@ void handle_input( Sender* s, LLnode** frameHead ) {
     sendFrame->crc = crc32(sendFrame, 4+FRAME_PAYLOAD_SIZE);
     char *serialized = convert_frame_to_char(sendFrame);
 
-
-    ll_append_node(frameHead, serialized);
+    ll_append_node(outgoing, serialized);
     free(input->message);
     free(input);
     free(sendFrame);
@@ -72,7 +78,8 @@ void handle_input( Sender* s, LLnode** frameHead ) {
 }
 
 
-void handle_timedout_frames(Sender* sender, LLnode** outgoing_frames_head_ptr) {
+void handle_timedout(Sender* sender, LLnode** outgoing) {
+
 }
 
 
@@ -99,9 +106,8 @@ void * run_sender(void * input_sender) {
     //The time is specified as an ABSOLUTE (meaning, conceptually, you specify 9/23/2010 @ 1pm, wakeup)
     time_spec.tv_sec  = curr_timeval.tv_sec;
     time_spec.tv_nsec = curr_timeval.tv_usec * 1000;
-
     //Check for the next event we should handle
-    expiring_timeval = sender_get_next_expiring_timeval(sender);
+    expiring_timeval = next_expiring_timeval(sender);
 
     //Perform full on timeout
     if (expiring_timeval == NULL) {
@@ -151,23 +157,28 @@ void * run_sender(void * input_sender) {
 
 
     //Implement this
-    handle_timedout_frames(sender, &outgoing_frames_head);
+    handle_timedout(sender, &outgoing_frames_head);
 
     //CHANGE THIS AT YOUR OWN RISK!
     //Send out all the frames
-    int ll_outgoing_frame_length = ll_get_length(outgoing_frames_head);
-        
-    while(ll_outgoing_frame_length > 0) {
+    while( ll_get_length(outgoing_frames_head) > 0 ) {
       LLnode * ll_outframe_node = ll_pop_node(&outgoing_frames_head);
       char * char_buf = (char *)  ll_outframe_node->value;
 
+      FrameBuf *mark = (FrameBuf *) malloc( sizeof(FrameBuf) );
+      mark->buf = (char *)malloc(MAX_FRAME_SIZE);
+      mark->acked = 0;
+      gettimeofday(&curr_timeval, NULL);
+      mark->timestamp = curr_timeval;
+      memcpy(mark->buf, char_buf, MAX_FRAME_SIZE);
+
+      ll_append_node(&sender->buffer, mark);
+      
       //Don't worry about freeing the char_buf, the following function does that
       send_msg_to_receivers(char_buf);
 
       //Free up the ll_outframe_node
       free(ll_outframe_node);
-
-      ll_outgoing_frame_length = ll_get_length(outgoing_frames_head);
     }
   }
   pthread_exit(NULL);

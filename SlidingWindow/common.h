@@ -17,8 +17,14 @@
 #define AUTOMATED_FILENAME 512
 #define MAX_SEQ 256
 #define MAX_ACK 256
-#define ACK_FLAG 1
+
 #define SEQ_FLAG 0
+#define ACK_FLAG 1
+#define TMO_FLAG 2
+
+#define MAX_SWS 1
+#define MAX_RWS MAX_SWS
+#define MAX_WAIT 100000   // microseconds
 
 typedef unsigned char uchar_t;
 
@@ -52,7 +58,6 @@ struct LLnode_t {
 };
 typedef struct LLnode_t LLnode;
 
-
 //Receiver and sender data structures
 struct Receiver_t {
   pthread_mutex_t buffer_mutex;
@@ -64,12 +69,15 @@ struct Receiver_t {
 struct Sender_t {
   pthread_mutex_t buffer_mutex;
   pthread_cond_t buffer_cv;    
-  LLnode * input_cmdlist_head;
-  LLnode * input_framelist_head;
+  LLnode *input_cmdlist_head;
+  LLnode *input_framelist_head;
   int send_id;
   unsigned char LFS;  // last frame sent
   unsigned char LAR;  // last ack received
-  unsigned char SWS;
+  unsigned char SWS;  // keep track of current sender window size
+  
+  //supporting only 1 receiver atm
+  LLnode *buffer;
 };
 
 enum SendFrame_DstType {
@@ -93,6 +101,13 @@ struct Frame_t {
   uint32_t crc;                   // 4 bytes  - CRC
 };
 typedef struct Frame_t Frame;
+
+struct FrameBuf_t {
+  char *buf;
+  char acked;
+  struct timeval timestamp;
+};
+typedef struct FrameBuf_t FrameBuf;
 
 
 //Declare global variables here DO NOT CHANGE 

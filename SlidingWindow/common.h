@@ -18,7 +18,7 @@
 #define MAX_SEQ 256
 #define MAX_ACK 256
 
-#define SEQ_FLAG 0
+#define SEQ_FLAG 0 
 #define ACK_FLAG 1
 #define TMO_FLAG 2
 
@@ -104,8 +104,7 @@ typedef struct Frame_t Frame;
 
 struct FrameBuf_t {
   char *buf;
-  char acked;
-  struct timeval timestamp;
+  struct timeval expires;
 };
 typedef struct FrameBuf_t FrameBuf;
 

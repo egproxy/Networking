@@ -15,7 +15,19 @@ void init_sender(Sender* s, int id) {
     Sender will always wait 1 decisecond unless this function returns a timeval to 
     wake prematurely due to a frame that will timeout within that interval
  */
-struct timeval *next_expiring_timeval(Sender* s) {
+struct timeval *next_expiring_timeval(Sender* s, struct timeval *now) {
+  if( s->buffer != NULL ) {
+    LLnode *iter = s->buffer;
+    do {
+      FrameBuf *temp = (FrameBuf *)iter->value;
+      time_t exsec = temp->expires.tv_sec;
+      time_t exusec = temp->expires.tv_usec;
+      if( now->tv_sec <= exsec && now->tv_usec < exusec ) {
+        if( temp->buf[3] & ACK_FLAG ) continue; // check if frame has been acked
+        return &temp->expires;
+      }
+    } while( (iter = iter->next) != s->buffer );
+  }
   return NULL;
 }
 

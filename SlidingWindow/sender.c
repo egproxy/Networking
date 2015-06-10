@@ -15,14 +15,17 @@ void init_sender(Sender* s, int id) {
     Sender will always wait 1 decisecond unless this function returns a timeval to 
     wake prematurely due to a frame that will timeout within that interval
  */
-struct timeval *next_expiring_timeval(Sender* s, struct timeval *now) {
+struct timeval *next_expiring_timeval(Sender* s) {
+  struct timeval now;
+  gettimeofday(&now, NULL);
+
   if( s->buffer != NULL ) {
     LLnode *iter = s->buffer;
     do {
       FrameBuf *temp = (FrameBuf *)iter->value;
       time_t exsec = temp->expires.tv_sec;
       time_t exusec = temp->expires.tv_usec;
-      if( now->tv_sec <= exsec && now->tv_usec < exusec ) {
+      if( now.tv_sec <= exsec && now.tv_usec < exusec ) {
         if( temp->buf[3] & ACK_FLAG ) continue; // check if frame has been acked
         return &temp->expires;
       }
@@ -31,6 +34,29 @@ struct timeval *next_expiring_timeval(Sender* s, struct timeval *now) {
   return NULL;
 }
 
+void handle_timedout(Sender* s, LLnode** outgoing) {
+  struct timeval now;
+  gettimeofday(&now, NULL);
+
+  if( s->buffer != NULL ) {
+    LLnode * iter = s->buffer;
+    do {
+      FrameBuf *temp = (FrameBuf *)iter->value;
+      if( !(temp->buf[3] & ACK_FLAG) ) {
+        time_t exsec = temp->expires.tv_sec;
+        time_t exusec = temp->expires.tv_usec;
+        if( now.tv_sec >= exsec && now.tv_usec >= exusec ) {
+          temp->expires.tv_sec = now.tv_sec;
+          temp->expires.tv_usec = now.tv_usec + MAX_WAIT;
+          char *resendbuf = (char *)malloc(MAX_FRAME_SIZE);
+          memcpy(resendbuf, temp->buf, MAX_FRAME_SIZE);
+          resendbuf[3] |= TMO_FLAG;
+          ll_append_node(outgoing, resendbuf);
+        }
+      }
+    } while( (iter = iter->next) != s->buffer );
+  }
+}
 
 void handle_acks(Sender* s, LLnode** outgoing) {
   LLnode *temp = NULL;
@@ -88,12 +114,6 @@ void handle_input( Sender* s, LLnode** outgoing) {
     free(sendFrame);
   }    
 }
-
-
-void handle_timedout(Sender* sender, LLnode** outgoing) {
-
-}
-
 
 void * run_sender(void * input_sender) {    
   struct timespec   time_spec;
@@ -179,9 +199,9 @@ void * run_sender(void * input_sender) {
 
       FrameBuf *mark = (FrameBuf *) malloc( sizeof(FrameBuf) );
       mark->buf = (char *)malloc(MAX_FRAME_SIZE);
-      mark->acked = 0;
       gettimeofday(&curr_timeval, NULL);
-      mark->timestamp = curr_timeval;
+      mark->expires.tv_sec = curr_timeval.tv_sec;
+      mark->expires.tv_usec = curr_timeval.tv_usec + MAX_WAIT;
       memcpy(mark->buf, char_buf, MAX_FRAME_SIZE);
 
       ll_append_node(&sender->buffer, mark);

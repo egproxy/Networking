@@ -61,18 +61,37 @@ void handle_timedout(Sender* s, LLnode** outgoing) {
 void handle_acks(Sender* s, LLnode** outgoing) {
   LLnode *temp = NULL;
   char *inbound = NULL;
+  unsigned char skip = 0;
+
   while(ll_get_length(s->input_framelist_head) > 0 ) {
     temp = ll_pop_node(&s->input_framelist_head);
     inbound = (char *)temp->value;
-   
-    if( inbound[0] == s->send_id && (s->LAR+MAX_SEQ+1) % MAX_SEQ == inbound[2] ) {
-      s->LAR++; 
-      s->SWS--;
-      fprintf(stderr, "NOTICE <SND_%d> : Got an ACK from <RECV_%d>\n",s->send_id, inbound[1]);
+
+    if( inbound[0] == s->send_id ) {
+      LLnode *iter = s->buffer;
+      do {
+        skip = 0;
+        FrameBuf *fb = (FrameBuf *)iter->value;
+        if( iter == s->buffer ) { // If this is the head
+          if( fb->buf[3] & ACK_FLAG || inbound[2] == (s->LAR+MAX_SEQ+1) % MAX_SEQ ) {
+            fprintf(stderr, "NOTICE <SND_%d> : Got an ACK from <RECV_%d>\n",s->send_id, inbound[1]);
+            skip++;
+            s->LAR++;
+            LLnode *rm = ll_pop_node(&s->buffer);
+            FrameBuf *rmbuf = (FrameBuf *)rm->value;
+            free(rmbuf->buf);
+            free(rm);
+            iter = s->buffer; //point to the new head
+          }
+        } else if( fb->buf[2] == inbound[2] ) {
+          fb->buf[2] ^= ACK_FLAG;
+        }
+      } while( (skip && s->buffer) || (iter = iter->next) != s->buffer );
+      // Say inbound frame is shared across all receivers, then need to 
+      // iterate through target src id
     }
     free(inbound);
   }
- 
 }
 
 #define SND_DEBUG 0

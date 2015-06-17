@@ -1,8 +1,13 @@
 #include "receiver.h"
 
-void init_receiver(Receiver * receiver, int id) {
-  receiver->recv_id = id;
-  receiver->input_framelist_head = NULL;
+void init_receiver(Receiver * r, int id) {
+  r->recv_id = id;
+  r->input_framelist_head = NULL;
+  r->LAF = MAX_RWS;
+  r->LFR = -1;
+  r->RWS = 0;
+
+  r->buffer = (char **) malloc( MAX_RWS );
 }
 
 

@@ -64,6 +64,11 @@ struct Receiver_t {
   pthread_cond_t buffer_cv;
   LLnode * input_framelist_head;
   int recv_id;
+  unsigned char LAF;  // largest acceptable frame
+  unsigned char LFR;  // last frame received, and sent ack for
+  unsigned char RWS;  // keep track of current receiver window size
+  
+  char **buffer;      // NOT USED YET, but keep fragments of messages
 };
 
 struct Sender_t {
